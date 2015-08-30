@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">PopularMovies</string>
+
+    <string name="action_sortbymostpopular">Sort By Popularity</string>
+    <string name="action_sortbyrating">Sort By Rating</string>
+    <string name="revenue">revenue.desc</string>
+    <string name="popularity">popularity.desc</string>
+    <string name="title_activity_detail_view">DetailViewActivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_movie">MovieActivity</string>
+
+</resources>
