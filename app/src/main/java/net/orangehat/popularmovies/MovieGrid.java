@@ -1,6 +1,6 @@
 package net.orangehat.popularmovies;
 
-import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -9,18 +9,36 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MovieGrid extends AppCompatActivity {
+
+public class MovieGrid extends AppCompatActivity implements OnFetchCompleted {
 
     private FetchMoviesTask fetchMoviesTask;
+    private List<MovieDto> movieDtoList = new ArrayList<>();
 
-    public enum SortBy {popularity, revenue}
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_grid);
-        fetchMoviesTask = new FetchMoviesTask(this, Constants.BYPOPULARITY);
-        fetchMoviesTask.execute();
+
+        if(savedInstanceState == null || !savedInstanceState.containsKey("fetchedMovies")) {
+            fetchMoviesTask = new FetchMoviesTask(this, Constants.BYPOPULARITY);
+            fetchMoviesTask.execute();
+        }
+        else{
+            movieDtoList = savedInstanceState.getParcelableArrayList("fetchedMovies");
+            onTaskCompleted(movieDtoList);
+        }
+
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putParcelableArrayList("fetchedMovies", (ArrayList<MovieDto>) movieDtoList);
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
@@ -49,6 +67,10 @@ public class MovieGrid extends AppCompatActivity {
                 fetchMoviesTask.execute();
             }
         }
+        else{
+            fetchMoviesTask = new FetchMoviesTask(this, changeSortingTo);
+            fetchMoviesTask.execute();
+        }
 
         //noinspection SimplifiableIfStatement
 //        if (id == R.id.action_settings) {
@@ -56,5 +78,22 @@ public class MovieGrid extends AppCompatActivity {
 //        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onTaskCompleted(List<MovieDto> movieDtos) {
+        movieDtoList = movieDtos;
+        ImageAdapter imageAdapter = new ImageAdapter(this, movieDtoList);
+        GridView gridView = (GridView) findViewById(R.id.movieView);
+        gridView.setAdapter(imageAdapter);
+        final MovieGrid thisActivity = this;
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(thisActivity, DetailViewActivity.class).putExtra(MovieDto.class.getName(), (Serializable) movieDtoList.get(position));
+                startActivity(intent);
+            }
+        });
+
     }
 }

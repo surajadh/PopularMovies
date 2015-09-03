@@ -1,12 +1,8 @@
 package net.orangehat.popularmovies;
 
-import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.GridView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,12 +22,12 @@ import java.util.List;
  */
 public class FetchMoviesTask extends AsyncTask<Void, Void, List<MovieDto>> {
 
-    private MovieGrid movieGrid;
+    private OnFetchCompleted movieGridActivity;
     private String sortBy;
+    private ImageAdapter imageAdapter;
 
-    public FetchMoviesTask(MovieGrid movieGridActivity, String sortRequirement) {
-        movieGrid = movieGridActivity;
-//        sortBy = (sortRequirement == null) : R.string.popularity ? sortRequirement;
+    public FetchMoviesTask(OnFetchCompleted movieGrid, String sortRequirement) {
+        movieGridActivity = movieGrid;
         if(sortRequirement == null){
             sortBy = Constants.BYPOPULARITY;
         }
@@ -48,8 +44,8 @@ public class FetchMoviesTask extends AsyncTask<Void, Void, List<MovieDto>> {
 
         JSONObject movieJson = new JSONObject(movieJsonStr);
         JSONArray movieArray = movieJson.getJSONArray(Constants.TMDB_RESULTS);
+        List<MovieDto> movieDtos = new ArrayList<>();
 
-        List<MovieDto> movies = new ArrayList<>();
         for(int i = 0; i < movieArray.length(); i++) {
 
             String imageUrl;
@@ -57,17 +53,16 @@ public class FetchMoviesTask extends AsyncTask<Void, Void, List<MovieDto>> {
             JSONObject movie = movieArray.getJSONObject(i);
 
             MovieDto movieDto = new MovieDto();
-
             imageUrl = Constants.TMDB_IMAGE_BASEURL + movie.getString(Constants.TMDB_IMAGEPATH);
             movieDto.setMoviePosterUrl(imageUrl);
             movieDto.setOriginalTitle(movie.getString(Constants.TMDB_ORIGINALTITLE));
             movieDto.setPlotSynopsis(movie.getString(Constants.TMDB_OVERVIEW));
             movieDto.setReleaseDate(movie.getString(Constants.TMDB_RELEASEDATE));
             movieDto.setUserRating(movie.getString(Constants.TMDB_AVERAGERATING));
-            movies.add(movieDto);
+            movieDtos.add(movieDto);
         }
 
-        return movies;
+        return movieDtos;
 
     }
 
@@ -157,23 +152,8 @@ public class FetchMoviesTask extends AsyncTask<Void, Void, List<MovieDto>> {
 
     @Override
     protected void onPostExecute(final List<MovieDto> result) {
-        if (result != null) {
-
-            //I probably need to find a way to do all this in mainactivity and just update data
-            //here but not sure how?
-            ImageAdapter imageAdapter = new ImageAdapter(movieGrid, result);
-            imageAdapter.notifyDataSetChanged();
-            GridView gridView = (GridView) movieGrid.findViewById(R.id.movieView);
-            gridView.setAdapter(imageAdapter);
-            gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Intent intent = new Intent(movieGrid, DetailViewActivity.class).putExtra(MovieDto.class.getName(), result.get(position));
-                    movieGrid.startActivity(intent);
-
-                    //Intent intent = new Intent(this, DetailViewActivity.class); //this is not an activity
-                }
-            });
+        if (!result.isEmpty()) {
+            movieGridActivity.onTaskCompleted(result);
         }
     }
 
