@@ -1,6 +1,9 @@
 package net.orangehat.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -25,8 +28,10 @@ public class MovieGrid extends AppCompatActivity implements OnFetchCompleted {
         setContentView(R.layout.activity_movie_grid);
 
         if(savedInstanceState == null || !savedInstanceState.containsKey("fetchedMovies")) {
-            fetchMoviesTask = new FetchMoviesTask(this, Constants.BYPOPULARITY);
-            fetchMoviesTask.execute();
+            if(isNetworkAvailable()){
+                fetchMoviesTask = new FetchMoviesTask(this, Constants.BYPOPULARITY);
+                fetchMoviesTask.execute();
+            }
         }
         else{
             movieDtoList = savedInstanceState.getParcelableArrayList("fetchedMovies");
@@ -96,4 +101,17 @@ public class MovieGrid extends AppCompatActivity implements OnFetchCompleted {
         });
 
     }
+
+    public boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        // if no network is available networkInfo will be null
+        // otherwise check if we are connected
+        if (networkInfo != null && networkInfo.isConnected()) {
+            return true;
+        }
+        return false;
+    }
+
 }
